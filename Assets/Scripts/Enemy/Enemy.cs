@@ -40,7 +40,7 @@ public class Enemy : MonoBehaviour
     public Ragdoll ragdoll { get; private set; }
 
     public Enemy_DropController dropController { get; private set; }
-
+    public AudioManager audioManager { get; private set; }
 
     protected virtual void Awake()
     {
@@ -58,6 +58,7 @@ public class Enemy : MonoBehaviour
     protected virtual void Start()
     {
         InitializePatrolPoints();
+        audioManager = AudioManager.instance;
     }
 
   
@@ -100,17 +101,23 @@ public class Enemy : MonoBehaviour
 
     public virtual void GetHit(int damage)
     {
+        EnterBattleMode();
         health.ReduceHealth(damage);
 
         if (health.ShouldDie())
             Die();
-
-        EnterBattleMode();
     }
 
     public virtual void Die()
     {
         dropController.DropItems();
+
+
+        anim.enabled = false;
+        agent.isStopped = true;
+        agent.enabled = false;
+
+        ragdoll.RagdollActive(true);
 
         MissionObject_HuntTarget huntTarget = GetComponent<MissionObject_HuntTarget>();
         huntTarget?.InvokeOnTargetKilled();

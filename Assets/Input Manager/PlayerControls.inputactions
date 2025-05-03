@@ -139,6 +139,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "PreciseAim",
+                    "type": "Button",
+                    "id": "f826118c-7627-45c9-a3d3-d34f403c3135",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -348,6 +357,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "UI Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9805d7d0-83d8-4c4a-8600-d630a0d5479b",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "PreciseAim",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

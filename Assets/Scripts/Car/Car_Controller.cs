@@ -1,11 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
-public enum DriveType { FrontWheelDrive, RearWheelDrive, AllWheelDrive}
+public enum DriveType { FrontWheelDrive, RearWheelDrive, AllWheelDrive }
 
 [RequireComponent(typeof(NavMeshObstacle))]
 [RequireComponent(typeof(Car_HealthController))]
@@ -21,16 +18,18 @@ public class Car_Controller : MonoBehaviour
     private float moveInput;
     private float steerInput;
 
+    [SerializeField] private LayerMask whatIsGround;
+
     public float speed;
 
-    [Range(30,60)]
+    [Range(30, 60)]
     [SerializeField] private float turnSensetivity = 30;
     [Header("Car Settings")]
     [SerializeField] private DriveType driveType;
     [SerializeField] private Transform centerOfMass;
-    [Range(350,1000)]
+    [Range(350, 1000)]
     [SerializeField] private float carMass = 400;
-    [Range(20,80)]
+    [Range(20, 80)]
     [SerializeField] private float wheelsMass = 30;
     [Range(.5f, 2f)]
     [SerializeField] private float frontWheelTraction = 1;
@@ -39,19 +38,19 @@ public class Car_Controller : MonoBehaviour
 
     [Header("Engine Settings")]
     [SerializeField] private float currentSpeed;
-    [Range(7,12)]
+    [Range(7, 12)]
     [SerializeField] private float maxSpeed = 7;
-    [Range(.5f,10)]
+    [Range(.5f, 10)]
     [SerializeField] private float accleerationSpeed = 2;
-    [Range(1500,5000)]
+    [Range(1500, 5000)]
     [SerializeField] private float motorForce = 1500f;
 
     [Header("Brakes Settings")]
-    [Range(0,10)]
+    [Range(0, 10)]
     [SerializeField] private float frontBrakesSensetivity = 5;
-    [Range(0,10)]
+    [Range(0, 10)]
     [SerializeField] private float backBrakesSensetivity = 5;
-    [Range(4000,6000)]
+    [Range(4000, 6000)]
     [SerializeField] private float brakePower = 5000;
     private bool isBraking;
 
@@ -63,6 +62,7 @@ public class Car_Controller : MonoBehaviour
     [SerializeField] private float driftDuration = 1f;
     private float driftTimer;
     private bool isDrifting;
+    private bool canEmitTrails = true;
 
 
     private Car_Wheel[] wheels;
@@ -117,9 +117,10 @@ public class Car_Controller : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if(carActive == false)
+        if (carActive == false)
             return;
 
+        ApplyTrailsOnTheGround();
         ApplyAnimationToWheels();
         ApplyDrive();
         ApplySteering();
@@ -132,15 +133,37 @@ public class Car_Controller : MonoBehaviour
             StopDrift();
     }
 
-    
+    private void ApplyTrailsOnTheGround()
+    {
+        if (canEmitTrails == false) return;
+        foreach (var wheel in wheels)
+        {
+            WheelHit hit;
+            if (wheel.cd.GetGroundHit(out hit))
+            {
+                if (whatIsGround == (whatIsGround | (1 << hit.collider.gameObject.layer)))
+                {
+                    wheel.trail.emitting = true;
+                }
+                else
+                {
+                    wheel.trail.emitting = false;
+                }
+            }
+            else
+            {
+                wheel.trail.emitting = false;
+            }
+        }
+    }
 
     private void ApplyDrive()
     {
         currentSpeed = moveInput * accleerationSpeed * Time.deltaTime;
 
-        float motorTorqueValue =  motorForce * currentSpeed;
+        float motorTorqueValue = motorForce * currentSpeed;
 
-        foreach(var wheel in wheels)
+        foreach (var wheel in wheels)
         {
             if (driveType == DriveType.FrontWheelDrive)
             {
@@ -152,7 +175,7 @@ public class Car_Controller : MonoBehaviour
                 if (wheel.axelType == AxelType.Back)
                     wheel.cd.motorTorque = motorTorqueValue;
             }
-            else 
+            else
             {
                 wheel.cd.motorTorque = motorTorqueValue;
             }
@@ -247,6 +270,14 @@ public class Car_Controller : MonoBehaviour
 
     public void BrakeTheCar()
     {
+        canEmitTrails = false;
+
+        foreach (var wheel in wheels)
+        {
+            wheel.trail.emitting = false;
+        }
+
+        rb.drag = 1;
         motorForce = 0;
         isDrifting = true;
         frontDriftFactor = .9f;
@@ -274,10 +305,10 @@ public class Car_Controller : MonoBehaviour
             isBraking = true;
             isDrifting = true;
             driftTimer = driftDuration;
-        }; 
+        };
         controls.Car.Brake.canceled += ctx => isBraking = false;
 
-        
+
 
         controls.Car.CarExit.performed += ctx => GetComponent<Car_Interaction>().GetOutOfTheCar();
     }
